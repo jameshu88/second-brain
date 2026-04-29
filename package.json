@@ -8,6 +8,7 @@
     "brain:doctor": "cd services/brain && npm run doctor",
     "brain:test": "cd services/brain && npm test",
     "brain:install": "cd services/brain && npm install",
+    "brain:google-auth": "cd services/brain && npm run google-auth",
     "launchd:install": "bash scripts/install-launchd.sh",
     "launchd:uninstall": "bash scripts/uninstall-launchd.sh"
   }

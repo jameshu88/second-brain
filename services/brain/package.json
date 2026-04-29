@@ -8,6 +8,7 @@
     "start": "node src/index.js",
     "test": "node --test test/*.test.js",
     "doctor": "node src/cli/doctor.js",
+    "google-auth": "node src/cli/google-auth.js",
     "check": "node --check src/index.js",
     "lint:plist": "plutil -lint $HOME/Library/LaunchAgents/com.secondbrain.brain.plist"
   },
