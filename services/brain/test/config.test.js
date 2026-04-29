@@ -8,6 +8,7 @@ const BASE = {
   SLACK_APP_TOKEN: 'xapp-x',
   SLACK_SIGNING_SECRET: 's',
   VAULT_PATH: '/tmp/some-vault',
+  ANTHROPIC_API_KEY: 'sk-ant-test',
 };
 
 test('loadConfig returns a normalized config from env', () => {
@@ -46,4 +47,20 @@ test('loadConfig fails fast when VAULT_PATH is missing', () => {
 test('loadConfig accepts empty ALLOWED_SLACK_USER_IDS as no allowlist', () => {
   const cfg = loadConfig(BASE);
   assert.deepEqual(cfg.allowedUserIds, []);
+});
+
+test('loadConfig exposes anthropic.apiKey and model defaults', () => {
+  const cfg = loadConfig(BASE);
+  assert.equal(cfg.anthropic.apiKey, 'sk-ant-test');
+  assert.equal(cfg.anthropic.tagModel, 'claude-haiku-4-5-20251001');
+  assert.equal(cfg.anthropic.chatModel, 'claude-sonnet-4-6');
+});
+
+test('loadConfig fails fast when ANTHROPIC_API_KEY is missing', () => {
+  assert.throws(() => loadConfig({ ...BASE, ANTHROPIC_API_KEY: '' }), /ANTHROPIC_API_KEY/);
+});
+
+test('loadConfig honors ANTHROPIC_TAG_MODEL override', () => {
+  const cfg = loadConfig({ ...BASE, ANTHROPIC_TAG_MODEL: 'claude-haiku-future' });
+  assert.equal(cfg.anthropic.tagModel, 'claude-haiku-future');
 });
