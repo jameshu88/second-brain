@@ -5,7 +5,7 @@ const { buildApp } = require('./slack/adapter');
 
 async function main() {
   const config = loadConfig(process.env);
-  const app = buildApp({ config });
+  const app = await buildApp({ config });
   await app.start();
   console.log(`[brain] started in Socket Mode`);
   console.log(`[brain] vault: ${config.vaultPath}`);
