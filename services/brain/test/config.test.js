@@ -64,3 +64,23 @@ test('loadConfig honors ANTHROPIC_TAG_MODEL override', () => {
   const cfg = loadConfig({ ...BASE, ANTHROPIC_TAG_MODEL: 'claude-haiku-future' });
   assert.equal(cfg.anthropic.tagModel, 'claude-haiku-future');
 });
+
+test('loadConfig exposes google block when creds are set', () => {
+  const cfg = loadConfig({
+    ...BASE,
+    GOOGLE_OAUTH_CLIENT_ID: 'cid.apps.googleusercontent.com',
+    GOOGLE_OAUTH_CLIENT_SECRET: 'gsec',
+  });
+  assert.equal(cfg.google.clientId, 'cid.apps.googleusercontent.com');
+  assert.equal(cfg.google.clientSecret, 'gsec');
+});
+
+test('loadConfig sets google block to null when creds are missing', () => {
+  const cfg = loadConfig(BASE);
+  assert.equal(cfg.google, null);
+});
+
+test('loadConfig parses DEFAULT_CALENDAR_IDS into array', () => {
+  const cfg = loadConfig({ ...BASE, DEFAULT_CALENDAR_IDS: 'primary, work@example.com' });
+  assert.deepEqual(cfg.defaultCalendarIds, ['primary', 'work@example.com']);
+});

@@ -14,6 +14,16 @@ function loadConfig(env = process.env) {
 
   const tz = (env.TIMEZONE || '').trim() || hostTimezone();
 
+  const calIds = (env.DEFAULT_CALENDAR_IDS || 'primary')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const google =
+    env.GOOGLE_OAUTH_CLIENT_ID && env.GOOGLE_OAUTH_CLIENT_SECRET
+      ? { clientId: env.GOOGLE_OAUTH_CLIENT_ID, clientSecret: env.GOOGLE_OAUTH_CLIENT_SECRET }
+      : null;
+
   return {
     slack: {
       botToken: env.SLACK_BOT_TOKEN,
@@ -24,7 +34,10 @@ function loadConfig(env = process.env) {
       apiKey: env.ANTHROPIC_API_KEY,
       tagModel: env.ANTHROPIC_TAG_MODEL || 'claude-haiku-4-5-20251001',
       chatModel: env.ANTHROPIC_CHAT_MODEL || 'claude-sonnet-4-6',
+      classifyModel: env.ANTHROPIC_CLASSIFY_MODEL || 'claude-haiku-4-5-20251001',
     },
+    google,
+    defaultCalendarIds: calIds,
     vaultPath: path.resolve(env.VAULT_PATH),
     allowedUserIds: allowed,
     timezone: tz,
