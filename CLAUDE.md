@@ -33,6 +33,13 @@ Added by capture-time tag pass (Slice 2):
 
 A capture without the tag fields means the tag pass failed at capture time and the file is awaiting re-tag by the daily batch (Slice 6+).
 
+## Chat behavior
+
+- Each Slack message is classified `capture | question | both`. Captures land in `00_Inbox/` with a Haiku tag pass; questions go through a Sonnet tool loop with `search_vault`, `read_note`, `list_events`, `propose_event`.
+- Calendar writes are gated: the agent always proposes; the user must reply `y` in the same thread for it to fire.
+- Pending confirm actions live in `services/brain/.state/threads.json` and expire after 10 minutes.
+- Conversation memory: last 20 messages of the Slack thread, hydrated via `conversations.replies`.
+
 ## How to search (terminal)
 
 From repo root, search the private vault (if present):

@@ -32,6 +32,16 @@ Tags are produced by Claude Haiku 4.5 with structured output (tool use). The `me
 
 If the tag pass fails (rate limit, network, etc.), the file is still saved with base frontmatter and the ack reads `✓ Saved (tagging unavailable)`.
 
+## Chat
+
+You can also ask the brain things. Each Slack message is classified as `capture` (drop a thought), `question` (ask the agent), or `both`. Examples:
+
+- `find my notes on SAFEs` → searches `vault/` and replies with hits.
+- `what's on my calendar tomorrow?` → reads Google Calendar (if configured).
+- `block 2 hours Thursday for FormLab pitch` → proposes the event and asks you to reply `y` to confirm. Only `y`/`yes` actually creates it.
+
+Conversation memory is the Slack thread itself — replies in the same thread keep context; a fresh top-level DM starts a new conversation.
+
 ## Prerequisites
 
 - **macOS** (LaunchAgent runs the brain in the background; the service itself is Node and would run on Linux too — only the install scripts are Mac-specific).
@@ -76,8 +86,13 @@ SLACK_BOT_TOKEN=xoxb-...
 SLACK_APP_TOKEN=xapp-...
 SLACK_SIGNING_SECRET=...
 VAULT_PATH=/absolute/path/to/this/repo/vault
-ANTHROPIC_API_KEY=sk-ant-...      # https://console.anthropic.com/settings/keys
-ALLOWED_SLACK_USER_IDS=U12345     # your Slack user ID; restricts the bot to only you
+ANTHROPIC_API_KEY=sk-ant-...
+ALLOWED_SLACK_USER_IDS=U12345
+
+# Optional — enable calendar tools:
+GOOGLE_OAUTH_CLIENT_ID=...apps.googleusercontent.com
+GOOGLE_OAUTH_CLIENT_SECRET=...
+DEFAULT_CALENDAR_IDS=primary
 ```
 
 ### 4. Run
@@ -96,6 +111,29 @@ npm run launchd:uninstall    # to remove
 ```
 
 Logs: `~/Library/Logs/secondbrain/brain.{log,err}`.
+
+## Connect Google Calendar (optional)
+
+The brain works without Google. To enable calendar tools:
+
+1. **Create OAuth credentials.** Go to [Google Cloud Console → Credentials](https://console.cloud.google.com/apis/credentials), enable the **Google Calendar API**, then create an **OAuth client ID** of type **Desktop app**. Copy the client ID and secret into `services/brain/.env`:
+
+   ```ini
+   GOOGLE_OAUTH_CLIENT_ID=...apps.googleusercontent.com
+   GOOGLE_OAUTH_CLIENT_SECRET=...
+   ```
+
+2. **Authorize once:**
+
+   ```bash
+   npm run brain:google-auth
+   ```
+
+   The script opens a local URL; click it, sign in with the Google account whose calendar you want, and approve. The refresh token is saved to `~/.config/secondbrain/google-token.json` (mode 0600).
+
+3. **Restart the brain.** `npm run brain:doctor` should now show `[PASS] google`.
+
+If `brain:google-auth` ever returns "no refresh_token", revoke prior consent at <https://myaccount.google.com/permissions> and re-run.
 
 ## Diagnose
 
