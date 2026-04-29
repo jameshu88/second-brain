@@ -5,7 +5,7 @@ const path = require('node:path');
 const { WebClient } = require('@slack/web-api');
 const Anthropic = require('@anthropic-ai/sdk');
 
-async function runDoctor({ env, fetchSlackAuth, fetchAnthropicAuth }) {
+async function runDoctor({ env, fetchSlackAuth, fetchAnthropicAuth, fetchGoogleAuth }) {
   const checks = [];
 
   const required = ['SLACK_BOT_TOKEN', 'SLACK_APP_TOKEN', 'SLACK_SIGNING_SECRET', 'VAULT_PATH', 'ANTHROPIC_API_KEY'];
@@ -89,6 +89,30 @@ async function runDoctor({ env, fetchSlackAuth, fetchAnthropicAuth }) {
   }
   checks.push({ name: 'anthropic', ok: antOk, message: antMsg });
 
+  let gOk = false;
+  let gMsg = '';
+  const googleConfigured = Boolean(env.GOOGLE_OAUTH_CLIENT_ID && env.GOOGLE_OAUTH_CLIENT_SECRET);
+  if (!googleConfigured) {
+    gOk = true;
+    gMsg = 'not configured (calendar features disabled — set GOOGLE_OAUTH_* to enable)';
+  } else {
+    try {
+      const auth = await fetchGoogleAuth(env);
+      if (auth.configured && auth.ok) {
+        gOk = true;
+        gMsg = 'auth ok';
+      } else if (auth.configured && !auth.ok) {
+        gMsg = `auth failed: ${auth.error || 'unknown'}`;
+      } else {
+        gOk = true;
+        gMsg = 'not configured';
+      }
+    } catch (err) {
+      gMsg = `auth call threw: ${err.message}`;
+    }
+  }
+  checks.push({ name: 'google', ok: gOk, message: gMsg });
+
   return checks;
 }
 
@@ -114,11 +138,33 @@ async function realFetchAnthropicAuth(apiKey) {
   }
 }
 
+async function realFetchGoogleAuth(env) {
+  if (!env.GOOGLE_OAUTH_CLIENT_ID || !env.GOOGLE_OAUTH_CLIENT_SECRET) {
+    return { ok: true, configured: false };
+  }
+  try {
+    const { google } = require('googleapis');
+    const { loadGoogleAuth } = require('../google/auth');
+    const oauth = await loadGoogleAuth({
+      google: { clientId: env.GOOGLE_OAUTH_CLIENT_ID, clientSecret: env.GOOGLE_OAUTH_CLIENT_SECRET },
+    });
+    if (!oauth) {
+      return { ok: false, configured: true, error: 'token file missing — run `npm run brain:google-auth`' };
+    }
+    const cal = google.calendar({ version: 'v3', auth: oauth });
+    await cal.calendars.get({ calendarId: 'primary' });
+    return { ok: true, configured: true };
+  } catch (err) {
+    return { ok: false, configured: true, error: err.message };
+  }
+}
+
 async function cli() {
   const checks = await runDoctor({
     env: process.env,
     fetchSlackAuth: realFetchSlackAuth,
     fetchAnthropicAuth: realFetchAnthropicAuth,
+    fetchGoogleAuth: realFetchGoogleAuth,
   });
   let allOk = true;
   for (const c of checks) {
