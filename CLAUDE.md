@@ -17,10 +17,21 @@ Triage: move or link notes from Inbox into the right area; use calendar / daily 
 
 ## Frontmatter conventions (typical)
 
-- `created` — ISO time
+Base (always present on Slack captures):
+- `created` — ISO time (UTC)
 - `source` — e.g. `slack`, `manual`
-- `status` — e.g. `inbox`, `active`, `archived`
+- `status` — `inbox`, `active`, `archived`
 - `channel_type` — for Slack: `dm` or `channel`
+- `slack_user`, `slack_channel`
+
+Added by capture-time tag pass (Slice 2):
+- `type` — `idea | task | note | decision | question`
+- `tags` — short lowercase hyphen-separated topics
+- `mentions` — wikilinks to existing vault entities only
+- `summary` — single-sentence paraphrase
+- `suggested_para` — advisory PARA destination (e.g. `01_Projects/FormLab AI`)
+
+A capture without the tag fields means the tag pass failed at capture time and the file is awaiting re-tag by the daily batch (Slice 6+).
 
 ## How to search (terminal)
 

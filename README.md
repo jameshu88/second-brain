@@ -8,7 +8,7 @@ This repository ships the **structure, code, and docs**. Your real notes live in
 
 ## What it does today
 
-DM the Slack bot or `@mention` it in a channel → a timestamped markdown file appears under `vault/00_Inbox/` with frontmatter:
+DM the Slack bot or `@mention` it in a channel → a timestamped markdown file appears under `vault/00_Inbox/` with frontmatter, and the bot replies with a one-line ack like `✓ Saved as idea · tags: pose-estimation · linked: [[FormLab AI]]`.
 
 ```yaml
 ---
@@ -18,12 +18,19 @@ channel_type: dm
 status: inbox
 slack_user: U12345
 slack_channel: D67890
+type: idea
+tags: [pose-estimation]
+mentions: ["[[FormLab AI]]"]
+summary: Idea about rep-counting via pose estimation.
+suggested_para: 01_Projects/FormLab AI
 ---
 
 your message text
 ```
 
-Open the vault in Obsidian; the file is there immediately (no sync round-trip).
+Tags are produced by Claude Haiku 4.5 with structured output (tool use). The `mentions` field only references entities that already exist in your vault (`05_People/`, `06_Entities/`, top-level dirs of `01_Projects/` and `02_Areas/`); the model can't invent new wikilinks. `suggested_para` is advisory — the file stays in `00_Inbox/` until the daily batch routes it (Slice 6).
+
+If the tag pass fails (rate limit, network, etc.), the file is still saved with base frontmatter and the ack reads `✓ Saved (tagging unavailable)`.
 
 ## Prerequisites
 
@@ -69,7 +76,8 @@ SLACK_BOT_TOKEN=xoxb-...
 SLACK_APP_TOKEN=xapp-...
 SLACK_SIGNING_SECRET=...
 VAULT_PATH=/absolute/path/to/this/repo/vault
-ALLOWED_SLACK_USER_IDS=U12345    # your Slack user ID; restricts the bot to you
+ANTHROPIC_API_KEY=sk-ant-...      # https://console.anthropic.com/settings/keys
+ALLOWED_SLACK_USER_IDS=U12345     # your Slack user ID; restricts the bot to only you
 ```
 
 ### 4. Run
@@ -133,8 +141,7 @@ PARA folders inside the vault:
 
 - `vault/` is gitignored. Never run `git add -f vault/`.
 - Slack tokens live only in `services/brain/.env` (gitignored).
-- v1 does not call any LLM — your notes stay local.
-- Future slices will send vault snippets to the Anthropic API for chat/tagging; this will be opt-in via `ANTHROPIC_API_KEY`. See [`docs/privacy-audit-checklist.md`](docs/privacy-audit-checklist.md) before sharing this repo.
+- Your message text is sent to the Anthropic API for tagging (Haiku 4.5). The vault entity list is also sent so the model can pick from real names. No vault file content beyond the message you just sent is included in the tag pass. See [`docs/privacy-audit-checklist.md`](docs/privacy-audit-checklist.md) before sharing this repo.
 
 ## Troubleshooting
 
