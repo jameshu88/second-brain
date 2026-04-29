@@ -100,7 +100,14 @@ async function realFetchSlackAuth(token) {
 async function realFetchAnthropicAuth(apiKey) {
   try {
     const client = new Anthropic({ apiKey });
-    await client.models.list({ limit: 1 });
+    // Tiny probe: 1-token Haiku call. Authenticates without burning inference cost (<$0.000005).
+    // Earlier SDKs (<0.40) don't expose client.models, so we use messages.create which has been
+    // stable since 0.x.
+    await client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 1,
+      messages: [{ role: 'user', content: 'ping' }],
+    });
     return { ok: true };
   } catch (err) {
     return { ok: false, error: err.message };
