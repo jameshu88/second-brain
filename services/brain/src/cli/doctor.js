@@ -3,11 +3,12 @@ require('dotenv').config({ path: require('node:path').resolve(__dirname, '../../
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const { WebClient } = require('@slack/web-api');
+const Anthropic = require('@anthropic-ai/sdk');
 
-async function runDoctor({ env, fetchSlackAuth }) {
+async function runDoctor({ env, fetchSlackAuth, fetchAnthropicAuth }) {
   const checks = [];
 
-  const required = ['SLACK_BOT_TOKEN', 'SLACK_APP_TOKEN', 'SLACK_SIGNING_SECRET', 'VAULT_PATH'];
+  const required = ['SLACK_BOT_TOKEN', 'SLACK_APP_TOKEN', 'SLACK_SIGNING_SECRET', 'VAULT_PATH', 'ANTHROPIC_API_KEY'];
   const missing = required.filter((k) => !env[k] || env[k].trim() === '');
   checks.push({
     name: 'env',
@@ -69,6 +70,25 @@ async function runDoctor({ env, fetchSlackAuth }) {
   }
   checks.push({ name: 'slack', ok: slackOk, message: slackMsg });
 
+  let antOk = false;
+  let antMsg = '';
+  if (missing.includes('ANTHROPIC_API_KEY')) {
+    antMsg = 'skipped (no key)';
+  } else {
+    try {
+      const auth = await fetchAnthropicAuth(env.ANTHROPIC_API_KEY);
+      if (auth.ok) {
+        antOk = true;
+        antMsg = 'auth ok';
+      } else {
+        antMsg = `auth failed: ${auth.error || 'unknown'}`;
+      }
+    } catch (err) {
+      antMsg = `auth call threw: ${err.message}`;
+    }
+  }
+  checks.push({ name: 'anthropic', ok: antOk, message: antMsg });
+
   return checks;
 }
 
@@ -77,12 +97,26 @@ async function realFetchSlackAuth(token) {
   return client.auth.test();
 }
 
+async function realFetchAnthropicAuth(apiKey) {
+  try {
+    const client = new Anthropic({ apiKey });
+    await client.models.list({ limit: 1 });
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
 async function cli() {
-  const checks = await runDoctor({ env: process.env, fetchSlackAuth: realFetchSlackAuth });
+  const checks = await runDoctor({
+    env: process.env,
+    fetchSlackAuth: realFetchSlackAuth,
+    fetchAnthropicAuth: realFetchAnthropicAuth,
+  });
   let allOk = true;
   for (const c of checks) {
     const tag = c.ok ? 'PASS' : 'FAIL';
-    console.log(`[${tag}] ${c.name.padEnd(8)} ${c.message}`);
+    console.log(`[${tag}] ${c.name.padEnd(10)} ${c.message}`);
     if (!c.ok) allOk = false;
   }
   process.exit(allOk ? 0 : 1);
