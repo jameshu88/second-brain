@@ -1,0 +1,31 @@
+# Private vault — never commit real notes
+/vault/
+
+# Secrets and local config (do not use blanket `.env.*` — that hides `.env.example`)
+.env
+.env.local
+.env.*.local
+services/slack-ingest/.env
+
+# Dependencies
+node_modules/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Logs
+*.log
+npm-debug.log*
+
+# brain service
+services/brain/.env
+services/brain/.state/
+services/brain/node_modules/
+
+# brain logs (LaunchAgent writes here on the user's machine)
+# (note: these are outside the repo, but listed for reference)
+
