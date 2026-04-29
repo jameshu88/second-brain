@@ -1,0 +1,14 @@
+{
+  "name": "second-brain",
+  "private": true,
+  "description": "PARA vault + conversational brain",
+  "scripts": {
+    "dev": "bash scripts/dev.sh",
+    "brain:start": "cd services/brain && npm start",
+    "brain:doctor": "cd services/brain && npm run doctor",
+    "brain:test": "cd services/brain && npm test",
+    "brain:install": "cd services/brain && npm install",
+    "launchd:install": "bash scripts/install-launchd.sh",
+    "launchd:uninstall": "bash scripts/uninstall-launchd.sh"
+  }
+}
